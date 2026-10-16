@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#d4d4cf" media="(prefers-color-scheme: light)">
+  <title>New Tab</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/doto.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/space-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- Runs before first paint so a light-mode or coloured tab never flashes
+       black. Re-hash it into the CSP in vercel.json after any edit. -->
+  <script>
+    (() => {
+      const get = (k) => { try { return JSON.parse(localStorage.getItem("nothingtab." + k)); } catch { return null; } };
+      const root = document.documentElement;
+      let t = get("theme");
+      if (t !== "dark" && t !== "light") {
+        t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      }
+      root.dataset.theme = t;
+      const c = get("color");
+      if (["red", "green", "pink", "blue", "grey", "yellow"].includes(c)) root.dataset.color = c;
+    })();
+  </script>
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/materials.css">
+  <link rel="stylesheet" href="styles/glyph.css">
+  <link rel="stylesheet" href="styles/console.css">
+  <link rel="stylesheet" href="styles/search.css">
+  <link rel="stylesheet" href="styles/panels.css">
+  <link rel="stylesheet" href="styles/circuit.css">
+  <link rel="modulepreload" href="js/main.js">
+</head>
+<body>
+  <!-- Shared gradient for brand marks, so icons read as moulded rather than flat. -->
+  <svg class="defs" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="mark-fill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" class="mark-stop-top"/>
+        <stop offset="1" class="mark-stop-bottom"/>
+      </linearGradient>
+      <!-- LED bloom. User-space region: a straight strip has a zero-height
+           bounding box, which would otherwise clip its filter to nothing. -->
+      <filter id="glyph-glow" filterUnits="userSpaceOnUse" x="-10%" y="-10%" width="120%" height="120%"
+              color-interpolation-filters="sRGB">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="2.6" result="bloom"/>
+        <feMerge>
+          <feMergeNode in="bloom"/>
+          <feMergeNode in="bloom"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+  </svg>
+
+  <div class="stage">
+    <main class="chassis">
+      <div class="shell">
+        <!-- Circuit board and Phone (1) Glyph strips, drawn by js/glyph-interface.js. -->
+        <svg class="circuit" id="circuit" aria-hidden="true" focusable="false"></svg>
+        <i class="screw screw--tl" style="--r: 18deg" aria-hidden="true"></i>
+        <i class="screw screw--tr" style="--r: 64deg" aria-hidden="true"></i>
+        <i class="screw screw--bl" style="--r: 102deg" aria-hidden="true"></i>
+        <i class="screw screw--br" style="--r: 37deg" aria-hidden="true"></i>
+
+        <!-- Glyph Matrix -->
+        <section class="glyph" aria-label="Glyph Matrix">
+          <button class="glyph__face" id="glyph-face" type="button"
+                  aria-label="Glyph Matrix" aria-describedby="glyph-status">
+            <canvas class="matrix" id="glyph-canvas"></canvas>
+            <span class="glyph__glass" aria-hidden="true"></span>
+          </button>
+          <span class="sr-only" id="glyph-status" aria-live="polite"></span>
+        </section>
+
+        <!-- Search -->
+        <section class="search-area" id="search-area">
+          <form class="search frost" id="search" role="search" autocomplete="off"
+                action="https://www.google.com/search" method="get">
+            <button class="search__engine" id="engine-btn" type="button"
+                    aria-haspopup="menu" aria-expanded="false" aria-controls="engine-menu"
+                    aria-label="Search engine">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 5.1 5.1"/></svg>
+            </button>
+            <input class="search__input" id="q" name="q" type="search"
+                   placeholder="Search" aria-label="Search or enter website"
+                   role="combobox" aria-expanded="false" aria-controls="suggest"
+                   aria-autocomplete="both" enterkeyhint="go"
+                   autocapitalize="off" autocorrect="off" spellcheck="false">
+            <span class="search__chip" id="chip" hidden></span>
+            <button class="search__go" type="submit" aria-label="Go">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12h14.5M13.5 6.5 19 12l-5.5 5.5"/></svg>
+            </button>
+            <span class="search__grip" aria-hidden="true"></span>
+          </form>
+          <div class="suggest" id="suggest" role="listbox" aria-label="Suggestions" hidden></div>
+          <div class="menu engine-menu" id="engine-menu" role="menu" aria-label="Search engine" hidden></div>
+        </section>
+
+        <!-- Now playing -->
+        <section class="player liquid" id="player" aria-labelledby="player-label" data-state="setup">
+          <header class="panel__head player__head">
+            <h2 class="label" id="player-label">Now playing</h2>
+            <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+            <button class="icon-btn player__menu" id="player-menu" type="button"
+                    aria-label="Spotify connection" aria-expanded="false" aria-controls="player-pop">
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><circle cx="6" cy="9" r="1.5"/><circle cx="12" cy="9" r="1.5"/><circle cx="18" cy="9" r="1.5"/><circle cx="6" cy="15" r="1.5"/><circle cx="12" cy="15" r="1.5"/><circle cx="18" cy="15" r="1.5"/></svg>
+            </button>
+          </header>
+          <div class="player__body">
+            <div class="player__lens">
+              <a class="player__art" id="player-art" href="https://open.spotify.com/" aria-label="Open in Spotify">
+                <img id="player-img" alt="" decoding="async" hidden>
+              </a>
+              <svg class="glyph-a" id="glyph-a" aria-hidden="true" focusable="false"></svg>
+            </div>
+            <div class="player__meta">
+              <a class="player__title" id="player-title" href="https://open.spotify.com/">Nothing playing</a>
+              <span class="player__artist" id="player-artist">Spotify</span>
+            </div>
+            <div class="player__controls">
+              <button class="icon-btn" id="player-prev" type="button" aria-label="Previous track">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M7 5.5h2v13H7zM19 6v12L10 12z"/></svg>
+              </button>
+              <button class="icon-btn icon-btn--lg liquid-bubble" id="player-toggle" type="button" aria-label="Play">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="fill player__play"><path d="M7 4.8v14.4L19 12z"/></svg>
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="fill player__pause"><path d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z"/></svg>
+              </button>
+              <button class="icon-btn" id="player-next" type="button" aria-label="Next track">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M15 5.5h2v13h-2zM5 6v12l9-6z"/></svg>
+              </button>
+            </div>
+            <div class="player__bar" id="player-bar" role="slider" tabindex="0"
+                 aria-label="Seek" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+              <span class="player__fill" id="player-fill"></span>
+            </div>
+            <div class="player__times"><span id="player-pos">0:00</span><span id="player-dur">0:00</span></div>
+            <button class="player__connect liquid-bubble" id="player-connect" type="button">
+              <span class="dot-led" aria-hidden="true"></span>Connect Spotify
+            </button>
+          </div>
+          <div class="pop" id="player-pop" hidden></div>
+        </section>
+
+        <!-- Signature -->
+        <aside class="signature">
+          <span class="led" id="led" aria-hidden="true"></span>
+          <span class="signature__by">by Seia</span>
+          <span class="wordmark">nothingtab1</span>
+        </aside>
+
+        <!-- Favorites -->
+        <section class="favorites plateau" aria-labelledby="fav-title">
+          <header class="panel__head">
+            <h2 class="label" id="fav-title">Favorites</h2>
+            <button class="fav-edit" id="fav-edit" type="button" aria-pressed="false"
+                    aria-describedby="fav-title">Edit</button>
+          </header>
+          <ol class="fav-grid" id="fav-grid"></ol>
+        </section>
+
+        <!-- Console: display, pager, theme switch, Glyph button, timer tube -->
+        <section class="console" aria-label="Display">
+          <div class="well display">
+            <i class="screw screw--tl" style="--r: 70deg" aria-hidden="true"></i>
+            <i class="screw screw--tr" style="--r: 12deg" aria-hidden="true"></i>
+            <i class="screw screw--bl" style="--r: 155deg" aria-hidden="true"></i>
+            <i class="screw screw--br" style="--r: 91deg" aria-hidden="true"></i>
+            <button class="display__face" id="display-face" type="button"
+                    aria-label="Display" aria-describedby="display-status">
+              <canvas class="matrix" id="display-canvas"></canvas>
+            </button>
+            <form class="city" id="city-form" hidden>
+              <label class="sr-only" for="city-input">City for weather</label>
+              <input class="city__input" id="city-input" type="text" placeholder="City"
+                     autocomplete="off" spellcheck="false" enterkeyhint="done">
+            </form>
+          </div>
+
+          <div class="tube" id="tube" role="slider" tabindex="0"
+               aria-label="Timer length" aria-valuemin="1" aria-valuemax="60"
+               aria-valuenow="25" aria-valuetext="25 minutes">
+            <span class="tube__rod" id="tube-rod"></span>
+          </div>
+
+          <nav class="pager" aria-label="Display pages">
+            <div class="pager__dots" id="pager"></div>
+            <span class="pager__label" id="display-status" aria-live="polite"></span>
+          </nav>
+
+          <!-- Finish: dark / light, and the colourway. -->
+          <div class="finish">
+            <button class="switch" id="theme-switch" type="button" role="switch"
+                    aria-checked="true" aria-label="Dark mode">
+              <span class="switch__led" aria-hidden="true"></span>
+              <span class="switch__knob" aria-hidden="true"></span>
+            </button>
+            <div class="swatches" id="swatches" role="radiogroup" aria-label="Colour">
+              <button class="swatch" type="button" role="radio" data-color="none" aria-label="Classic" title="Classic"></button>
+              <button class="swatch" type="button" role="radio" data-color="red" aria-label="Red" title="Red"></button>
+              <button class="swatch" type="button" role="radio" data-color="green" aria-label="Green" title="Green"></button>
+              <button class="swatch" type="button" role="radio" data-color="pink" aria-label="Pink" title="Pink"></button>
+              <button class="swatch" type="button" role="radio" data-color="blue" aria-label="Blue" title="Blue"></button>
+              <button class="swatch" type="button" role="radio" data-color="grey" aria-label="Grey" title="Grey"></button>
+              <button class="swatch" type="button" role="radio" data-color="yellow" aria-label="Yellow" title="Yellow"></button>
+            </div>
+          </div>
+
+          <button class="plate chrome glyph-btn" id="glyph-button" type="button"
+                  aria-label="Glyph button — next Glyph Matrix toy">
+            <i class="screw screw--l" style="--r: 30deg" aria-hidden="true"></i>
+            <i class="screw screw--r" style="--r: 115deg" aria-hidden="true"></i>
+          </button>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <dialog class="sheet" id="fav-dialog" aria-labelledby="fav-dialog-title">
+    <form class="sheet__form" id="fav-form" method="dialog" novalidate>
+      <header class="sheet__head">
+        <h2 class="label" id="fav-dialog-title">Slot 01</h2>
+        <button class="icon-btn" id="fav-close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <label class="field">
+        <span class="field__label">Address</span>
+        <input class="field__input" id="fav-url" name="url" type="text" inputmode="url"
+               placeholder="notion.so" autocomplete="off" autocapitalize="off" spellcheck="false">
+      </label>
+      <label class="field">
+        <span class="field__label">Name</span>
+        <input class="field__input" id="fav-name" name="name" type="text" maxlength="24"
+               placeholder="Notion" autocomplete="off" spellcheck="false">
+      </label>
+      <p class="field__error" id="fav-error" role="alert" hidden></p>
+      <footer class="sheet__foot">
+        <button class="btn btn--ghost" id="fav-clear" type="button">Remove</button>
+        <span class="spacer"></span>
+        <button class="btn btn--ghost" id="fav-cancel" type="button">Cancel</button>
+        <button class="btn btn--primary" id="fav-save" value="save">Save</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

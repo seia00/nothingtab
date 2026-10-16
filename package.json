@@ -1,0 +1,16 @@
+{
+  "name": "nothingtab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node dev-server.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/build.mjs && node dev-server.mjs --dir dist --port 8126",
+    "install-local": "node scripts/build.mjs && node scripts/install-local.mjs",
+    "uninstall-local": "node scripts/install-local.mjs --uninstall",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

@@ -1,0 +1,692 @@
+/* Now playing, favorites, sheet dialog, popover, toast. */
+
+/* ── Now playing ───────────────────────────────────────────────── */
+
+/* Above the lower band, so its popover isn't buried under the console. */
+.player {
+  position: relative;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  height: calc(198 * var(--u));
+  padding: 0 calc(20 * var(--u)) 0 calc(22 * var(--u));
+}
+
+/* No hard rule on glass — a hairline that fades out at both ends. */
+.player__head {
+  flex: none;
+  background: linear-gradient(90deg, transparent, var(--hair-2) 18%, var(--hair-2) 82%, transparent) bottom / 100% 1px no-repeat;
+}
+
+.eq {
+  display: flex;
+  align-items: center;
+  gap: max(2px, calc(3 * var(--u)));
+  height: calc(18 * var(--u));
+}
+
+.eq i {
+  width: max(1.5px, calc(2 * var(--u)));
+  height: 100%;
+  border-radius: 1px;
+  background: var(--ink-3);
+  transform: scaleY(var(--h));
+}
+
+.eq i:nth-child(1) { --h: .35; }
+.eq i:nth-child(2) { --h: .8; animation-delay: -.3s; }
+.eq i:nth-child(3) { --h: .55; animation-delay: -.7s; }
+.eq i:nth-child(4) { --h: 1; animation-delay: -.15s; }
+.eq i:nth-child(5) { --h: .45; animation-delay: -.5s; }
+
+.player[data-state="playing"] .eq i {
+  background: var(--ink-2);
+  animation: eq .9s ease-in-out infinite alternate;
+}
+
+@keyframes eq {
+  from { transform: scaleY(.2); }
+  to { transform: scaleY(var(--h)); }
+}
+
+.player__body {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-template-columns: calc(94 * var(--u)) minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  column-gap: calc(20 * var(--u));
+  align-content: center;
+  align-items: center;
+}
+
+.player__art {
+  position: relative;
+  display: block;
+  width: calc(94 * var(--u));
+  aspect-ratio: 1;
+  overflow: hidden;
+  /* Concentric with the panel: its radius minus the inset. */
+  border-radius: calc(var(--r, 30px) - 18 * var(--u));
+  background:
+    radial-gradient(circle, var(--ink-4) 0 1px, transparent 1.5px) 0 0 / calc(8 * var(--u)) calc(8 * var(--u)),
+    linear-gradient(160deg, var(--plate-top), var(--plate-bottom));
+  box-shadow: inset 0 0 0 1px var(--hair-2), 0 8px 16px -8px rgba(0, 0, 0, .9);
+}
+
+.player__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.08);
+  transition: filter var(--t-3);
+}
+
+.player__art:hover img { filter: none; }
+
+/* Glass cover over the sleeve. */
+.player__art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(140deg, rgba(255, 255, 255, .2), transparent 38%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+}
+
+.player__meta {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  gap: calc(5 * var(--u));
+  min-width: 0;
+}
+
+.player__title,
+.player__artist {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.player__title {
+  font: 500 max(13px, calc(18 * var(--u)))/1.2 var(--font-sans);
+}
+
+.player__title:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--ink-3); }
+
+.player__artist {
+  font: 400 max(12px, calc(16 * var(--u)))/1.2 var(--font-sans);
+  color: var(--ink-2);
+}
+
+.player__controls {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  gap: calc(2 * var(--u));
+  margin-right: calc(-6 * var(--u));
+}
+
+.player__controls .icon-btn { --size: calc(34 * var(--u)); }
+.player__controls .icon-btn svg { width: 54%; height: 54%; }
+.player__controls .icon-btn--lg {
+  --size: calc(44 * var(--u));
+  border-radius: 50%;
+  transition: transform .45s cubic-bezier(.3, 1.6, .5, 1), background var(--t-1);
+}
+
+.player .liquid-bubble:hover {
+  background:
+    radial-gradient(circle at 30% 18%, var(--liquid-glint), transparent 75%),
+    var(--liquid-tint);
+}
+
+/* Squish, then spring back — the liquid press. */
+.player__controls .icon-btn--lg:active { transform: scale(.86); transition-duration: 90ms; }
+.player__controls .icon-btn--lg svg { width: 64%; height: 64%; }
+
+.player .player__pause { display: none; }
+.player[data-state="playing"] .player__pause { display: block; }
+.player[data-state="playing"] .player__play { display: none; }
+
+.player__bar {
+  position: relative;
+  grid-column: 2;
+  grid-row: 2;
+  height: calc(16 * var(--u));
+  min-height: 12px;
+  margin-top: calc(10 * var(--u));
+  cursor: pointer;
+  touch-action: none;
+}
+
+.player__bar::before,
+.player__fill {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 2px;
+  transition: height var(--t-1), margin-top var(--t-1);
+}
+
+.player__bar::before {
+  right: 0;
+  background: var(--hair-2);
+}
+
+.player__fill {
+  width: calc(var(--p, 0) * 100%);
+  background: var(--ink);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.player__bar:hover::before,
+.player__bar:hover .player__fill {
+  height: 4px;
+  margin-top: -2px;
+}
+
+.player__times {
+  grid-column: 2;
+  grid-row: 3;
+  display: flex;
+  justify-content: space-between;
+  margin-top: calc(6 * var(--u));
+  font: 400 max(9px, calc(12 * var(--u)))/1 var(--font-mono);
+  letter-spacing: .04em;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.player__connect {
+  grid-column: 2 / 4;
+  grid-row: 2 / 4;
+  white-space: nowrap;
+  justify-self: start;
+  display: none;
+  align-items: center;
+  gap: 9px;
+  height: max(26px, calc(32 * var(--u)));
+  margin-top: calc(10 * var(--u));
+  padding: 0 calc(14 * var(--u));
+  border-radius: 999px;
+  font: 400 max(9px, calc(11 * var(--u)))/1 var(--font-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  transition: color var(--t-1), transform .45s cubic-bezier(.3, 1.6, .5, 1);
+}
+
+.player__connect:hover { color: var(--ink); }
+.player__connect:active { transform: scale(.95); transition-duration: 90ms; }
+
+.player[data-state="setup"] .player__connect { display: inline-flex; }
+.player[data-state="setup"] .player__bar,
+.player[data-state="setup"] .player__times { visibility: hidden; }
+
+.player[data-state="setup"] .player__controls,
+.player[data-state="idle"] .player__controls { opacity: .35; }
+
+/* ── Popover (Spotify connection) ──────────────────────────────── */
+
+.pop {
+  position: absolute;
+  z-index: 40;
+  top: calc(52 * var(--u));
+  right: calc(10 * var(--u));
+  width: min(340px, calc(100vw - 48px));
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-edge);
+  background: var(--menu);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  backdrop-filter: blur(24px) saturate(1.3);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 30px 60px -20px rgba(0, 0, 0, .9);
+  animation: drop-in var(--t-2) var(--ease-out);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.pop p { margin: 0; line-height: 1.5; }
+.pop a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--ink-4); }
+
+.pop__steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  gap: 10px;
+}
+
+.pop__steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  line-height: 1.45;
+}
+
+.pop__steps li::before {
+  content: counter(step, decimal-leading-zero);
+  font: 400 10px/1.9 var(--font-mono);
+  color: var(--ink-3);
+}
+
+.pop__code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 6px 6px 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--hair-2);
+  background: var(--field);
+  font: 400 11px/1.3 var(--font-mono);
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.pop__code code { flex: 1; }
+.pop__row { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ── Favorites ─────────────────────────────────────────────────── */
+
+.favorites {
+  --inset: calc(22 * var(--u));
+  display: flex;
+  flex-direction: column;
+  min-height: calc(434 * var(--u)); /* and as tall as its row, on a tall window */
+  padding: 0 var(--inset) var(--inset);
+}
+
+.favorites .panel__head { padding: 0 calc(6 * var(--u)); }
+
+/* EDIT / DONE: a small mono pill; a red LED comes on while editing. */
+.fav-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  height: max(24px, calc(30 * var(--u)));
+  margin-left: auto;
+  padding: 0 calc(13 * var(--u));
+  border: 1px solid var(--hair-2);
+  border-radius: 999px;
+  font: 400 max(9px, calc(11 * var(--u)))/1 var(--font-mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  transition: color var(--t-1), background var(--t-1), border-color var(--t-1), transform var(--t-1) var(--ease-press);
+}
+
+.fav-edit:hover { color: var(--ink); background: var(--hair); }
+.fav-edit:active { transform: scale(.95); }
+.fav-edit[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-3); }
+
+.fav-edit[aria-pressed="true"]::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--red-led);
+  box-shadow: 0 0 5px var(--red-glow);
+}
+
+.fav-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: calc(29 * var(--u)) calc(22 * var(--u));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fav-grid > li {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  transition: transform var(--t-2) var(--ease-out);
+}
+
+/* The lift is on the slot, so the tile and its buttons rise together. */
+.fav-grid > li:hover { transform: translateY(calc(-2 * var(--u))); }
+
+.tile {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(16 * var(--u));
+  min-width: 0;
+  /* Concentric with the plateau's corners. */
+  border-radius: calc(var(--r, 48px) - var(--inset, 22px));
+  color: var(--ink);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition:
+    transform var(--t-2) var(--ease-out),
+    border-color var(--t-2),
+    box-shadow var(--t-2);
+}
+
+.tile:hover { border-color: color-mix(in srgb, var(--glass-edge) 50%, var(--ink)); }
+.tile:active { transform: scale(.985); transition-duration: var(--t-1); }
+
+.tile__mark {
+  display: grid;
+  place-items: center;
+  width: calc(52 * var(--u));
+  height: calc(52 * var(--u));
+  filter: drop-shadow(0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, .55));
+}
+
+:root[data-theme="light"] .tile__mark { filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .9)); }
+
+.tile__mark svg {
+  width: 100%;
+  height: 100%;
+  fill: url(#mark-fill);
+}
+
+/* A brand mark from Simple Icons, tinted by our own gradient. */
+.tile__mark .si {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, var(--mark-top), var(--mark-bottom));
+  -webkit-mask: var(--src) center / contain no-repeat;
+  mask: var(--src) center / contain no-repeat;
+}
+
+/* No mark available: the name's initial, set in the dot face. */
+.tile__mono {
+  font: 700 calc(54 * var(--u))/1 var(--font-dot);
+  font-variation-settings: "ROND" 100;
+  color: var(--ink);
+}
+
+.tile__name {
+  max-width: 90%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: 500 max(12px, calc(18 * var(--u)))/1.1 var(--font-sans);
+}
+
+.tile__corner,
+.tile__key {
+  position: absolute;
+  top: calc(15 * var(--u));
+  transition: color var(--t-2), transform var(--t-2) var(--ease-out), opacity var(--t-2);
+}
+
+.tile__corner {
+  right: calc(16 * var(--u));
+  width: max(12px, calc(18 * var(--u)));
+  height: max(12px, calc(18 * var(--u)));
+  color: var(--ink-2);
+}
+
+.tile__corner svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Tile actions: edit and remove ─────────────────────────────────
+   Two frosted buttons in the corner the arrow normally holds. They come
+   out on hover or keyboard focus, and stay out in edit mode (which is how
+   you reach them on a touch screen). */
+
+.tile__actions {
+  position: absolute;
+  top: calc(10 * var(--u));
+  right: calc(10 * var(--u));
+  z-index: 2;
+  display: flex;
+  gap: calc(6 * var(--u));
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(-3 * var(--u))) scale(.92);
+  transition: opacity var(--t-2), transform var(--t-2) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .fav-grid > li:hover .tile__actions {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    transition-delay: 80ms; /* passing over a tile shouldn't flash them */
+  }
+
+  .fav-grid > li:hover .tile__corner { opacity: 0; }
+}
+
+.fav-grid > li:focus-within .tile__actions,
+.fav-grid[data-editing] .tile__actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.fav-grid > li:focus-within .tile__corner,
+.fav-grid[data-editing] .tile__corner { opacity: 0; }
+
+.fav-grid > li:has(.is-dragging) .tile__actions { opacity: 0; }
+
+.tile__act {
+  display: grid;
+  place-items: center;
+  width: max(24px, calc(32 * var(--u)));
+  height: max(24px, calc(32 * var(--u)));
+  border-radius: 50%;
+  color: var(--ink-2);
+  transition: color var(--t-1), transform var(--t-1) var(--ease-press);
+}
+
+.tile__act svg {
+  width: 50%;
+  height: 50%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tile__act:hover { color: var(--ink); }
+.tile__act--remove:hover { color: var(--red-led); }
+.tile__act:active { transform: scale(.88); }
+
+.tile__key {
+  left: calc(18 * var(--u));
+  font: 400 max(9px, calc(11 * var(--u)))/1 var(--font-mono);
+  color: var(--ink-3);
+  opacity: 0;
+}
+
+body.show-keys .tile__key { opacity: 1; }
+
+.tile--empty {
+  border: 1px dashed var(--hair-2);
+  color: var(--ink-3);
+  background: transparent;
+}
+
+.tile--empty:hover { color: var(--ink); border-color: var(--ink-3); }
+
+.tile--empty .tile__mark { filter: none; }
+
+.tile--empty .tile__mark svg {
+  width: 44%;
+  height: 44%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.tile--empty .tile__name { font: 400 max(9px, calc(11 * var(--u)))/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; }
+
+/* Edit mode: dotted outlines, drag to swap, tap to edit. */
+.fav-grid[data-editing] .tile {
+  cursor: grab;
+  touch-action: none;
+  outline: 1px dashed var(--ink-4);
+  outline-offset: calc(5 * var(--u));
+}
+
+.fav-grid[data-editing] > li:hover { transform: none; }
+.fav-grid[data-editing] .tile.is-target { outline-color: var(--red-led); }
+
+.fav-grid .tile.is-dragging {
+  z-index: 10;
+  cursor: grabbing;
+  transform: translate(var(--dx, 0), var(--dy, 0)) scale(1.04);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 30px 50px -20px rgba(0, 0, 0, .95);
+  transition: box-shadow var(--t-2);
+}
+
+/* ── Sheet dialog ──────────────────────────────────────────────── */
+
+.sheet {
+  width: min(420px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--glass-edge);
+  border-radius: 12px;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--glass-tint-top), transparent 40%), var(--menu);
+  -webkit-backdrop-filter: blur(28px) saturate(1.3);
+  backdrop-filter: blur(28px) saturate(1.3);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 40px 80px -30px rgba(0, 0, 0, .9);
+}
+
+.sheet[open] { animation: sheet-in var(--t-3) var(--ease-out); }
+
+.sheet::backdrop {
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+}
+
+.sheet__form {
+  display: grid;
+  gap: 18px;
+  padding: 16px 20px 20px;
+}
+
+.sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-right: -8px;
+}
+
+.sheet__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.spacer { flex: 1; }
+
+.field__error {
+  margin: -6px 0 0;
+  font: 400 11px/1.4 var(--font-mono);
+  color: var(--red-led);
+}
+
+/* ── Toast ─────────────────────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  padding: 11px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-edge);
+  background: var(--menu);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 20px 40px -16px rgba(0, 0, 0, .8);
+  font: 400 11px/1.4 var(--font-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  animation: toast-in var(--t-3) var(--ease-out);
+}
+
+.toast::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red-led);
+  box-shadow: 0 0 6px var(--red-glow);
+}
+
+.toast__action {
+  margin-left: 6px;
+  padding: 4px 9px;
+  border: 1px solid var(--hair-2);
+  border-radius: 999px;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--ink);
+  transition: background var(--t-1), border-color var(--t-1);
+}
+
+.toast__action:hover { background: var(--hair); border-color: var(--ink-3); }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+}
+
+/* ── Smaller chassis ───────────────────────────────────────────── */
+
+@container chassis (width < 960px) {
+  .player { height: auto; min-height: 204px; }
+  .favorites { min-height: 0; }
+  .fav-grid { grid-template-rows: none; grid-auto-rows: 132px; }
+}
+
+@container chassis (width < 600px) {
+  .player { min-height: 0; padding-bottom: 14px; }
+  .player__body { padding-top: 12px; row-gap: 2px; }
+  .player__controls { grid-column: 2 / 4; grid-row: 4; justify-content: flex-start; margin-left: -8px; }
+  .player__meta { grid-column: 2 / 4; }
+  .player__bar,
+  .player__times,
+  .player__connect { grid-column: 2 / 4; }
+  .player__lens { grid-row: 1 / 5; align-self: start; }
+  .fav-grid { gap: 12px; grid-auto-rows: 104px; }
+  .tile__name { font-size: 12px; }
+}

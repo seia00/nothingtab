@@ -1,0 +1,361 @@
+/* Design tokens. Every colour, material and size in the page comes from here.
+
+   Sizes are written in --u: one unit is one pixel of the mockup's 1493px-wide
+   chassis, scaled to whatever the chassis is now. The device keeps its
+   proportions at any window size instead of reflowing into something else. */
+
+@property --u {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 1px;
+}
+
+@font-face {
+  font-family: "Doto";
+  src: url("../assets/fonts/doto.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Mono";
+  src: url("../assets/fonts/space-mono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --font-dot: "Doto", "Space Mono", ui-monospace, monospace;
+  --font-mono: "Space Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Inter, Arial, sans-serif;
+
+  --red: #d71921;
+  --red-led: #ff2a2a;
+  --red-glow: rgba(255, 34, 34, .55);
+
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-press: cubic-bezier(.3, .7, .4, 1);
+  --t-1: 120ms;
+  --t-2: 220ms;
+  --t-3: 420ms;
+
+  /* Chrome is chrome in either theme; only the room it reflects changes. */
+  --chrome-hi: #fbfbfb;
+  --chrome-mid: #a9a9a9;
+  --chrome-lo: #3d3d3d;
+  --chrome-dark: #161616;
+
+  /* How hard liquid glass bends colour behind it. Over a black or white
+     body, hard; over a coloured one that would glow neon, so colourways
+     ease it off. */
+  --liquid-sat: 1.8;
+  --liquid-rim-sat: 2.4;
+  --liquid-rim-lift: 1.45;
+
+  /* The tooth of sandblasted acrylic: fine grey noise, faint enough to lay
+     straight over a surface as a background layer. */
+  --frost-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.15' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Dark: black anodised body, smoked acrylic, white LEDs ───────── */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --page: #000;
+  --page-glow: rgba(255, 255, 255, .035);
+
+  --shell-top: #0f0f0f;
+  --shell-bottom: #070707;
+  --shell-edge: rgba(255, 255, 255, .13);
+  --shell-edge-top: rgba(255, 255, 255, .24);
+  --shell-drop: 0 50px 90px -40px rgba(0, 0, 0, 1);
+  --grain: .06;
+
+  --ink: #f2f2f0;
+  --ink-2: rgba(242, 242, 240, .66);
+  --ink-3: rgba(242, 242, 240, .42);
+  --ink-4: rgba(242, 242, 240, .2);
+  --hair: rgba(255, 255, 255, .08);
+  --hair-2: rgba(255, 255, 255, .16);
+
+  /* Glass: clear acrylic over a dark body. */
+  --glass-base: rgba(22, 22, 22, .62);
+  --glass-tint-top: rgba(255, 255, 255, .085);
+  --glass-tint-mid: rgba(255, 255, 255, .02);
+  --glass-edge: rgba(255, 255, 255, .26);
+  --glass-edge-lo: rgba(255, 255, 255, .09);
+  --glass-hi: rgba(255, 255, 255, .36);
+  --glass-bevel: rgba(0, 0, 0, .6);
+  --glass-sheen: rgba(255, 255, 255, .1);
+  --glass-drop: 0 18px 32px -18px rgba(0, 0, 0, 1), 0 2px 5px rgba(0, 0, 0, .55);
+
+  /* Liquid glass: near-clear body, thick refracting rim, moving glint. */
+  --liquid-tint: rgba(255, 255, 255, .03);
+  --liquid-glint: rgba(255, 255, 255, .1);
+  --liquid-spec: rgba(255, 255, 255, .6);
+  --liquid-spec-lo: rgba(255, 255, 255, .16);
+  --liquid-edge: rgba(255, 255, 255, .14);
+  --liquid-pool: rgba(255, 255, 255, .07);
+  --liquid-depth: rgba(0, 0, 0, .3);
+  --liquid-rim-hi: rgba(255, 255, 255, .26);
+  --liquid-rim-lo: rgba(255, 255, 255, .1);
+  --liquid-drop: rgba(0, 0, 0, .85);
+
+  /* Frosted glass: milky, grainy, edges lit by the light it scatters. */
+  --frost-top: rgba(255, 255, 255, .085);
+  --frost-bottom: rgba(255, 255, 255, .035);
+  --frost-base: rgba(22, 22, 22, .42);
+  --frost-edge: rgba(255, 255, 255, .15);
+  --frost-hi: rgba(255, 255, 255, .26);
+  --frost-glow: rgba(255, 255, 255, .055);
+  --frost-drop: 0 16px 30px -18px rgba(0, 0, 0, .95), 0 1px 3px rgba(0, 0, 0, .45);
+  --menu-frost: rgba(18, 18, 18, .74);
+
+  /* Plateau: raised clear slab, like the Phone (4a) Pro's camera plateau. */
+  --plateau-top: rgba(255, 255, 255, .06);
+  --plateau-bottom: rgba(255, 255, 255, .014);
+  --plateau-rim: rgba(255, 255, 255, .38);
+  --plateau-edge: rgba(255, 255, 255, .13);
+  --plateau-bevel-hi: rgba(255, 255, 255, .26);
+  --plateau-bevel-lo: rgba(255, 255, 255, .04);
+  --plateau-glare: rgba(255, 255, 255, .07);
+  --plateau-shade: rgba(0, 0, 0, .5);
+  --plateau-seam: rgba(0, 0, 0, .75);
+  --plateau-drop: rgba(0, 0, 0, .95);
+
+  /* Smoked plates that hold the displays. */
+  --plate-top: #171717;
+  --plate-bottom: #0a0a0a;
+  --plate-edge: rgba(255, 255, 255, .14);
+
+  /* Well: a recess cut into the body (the weather display sits in one). */
+  --well-top: #040404;
+  --well-bottom: #080808;
+  --well-shade: rgba(0, 0, 0, .95);
+  --well-edge: rgba(0, 0, 0, .7);
+  --well-lip: rgba(255, 255, 255, .13);
+  --well-catch: rgba(255, 255, 255, .09);
+
+  /* Plastic: the switch track. */
+  --plastic: #121212;
+  --plastic-edge: rgba(255, 255, 255, .16);
+
+  --screen-top: #0e0e0e;
+  --screen-bottom: #040404;
+
+  /* Circuit layer and Glyph strips. */
+  --trace: rgba(255, 255, 255, .075);
+  --trace-strong: rgba(255, 255, 255, .12);
+  --pad: rgba(255, 255, 255, .17);
+  --hole: #070707;
+  --silk: rgba(255, 255, 255, .26);
+  --chip: #050505;
+  --chip-edge: rgba(255, 255, 255, .16);
+  --glyph-case: rgba(255, 255, 255, .07);
+  --glyph-base: #141414;
+  --glyph-dots: rgba(255, 255, 255, .17);
+  --glyph-on: #ffffff;
+  --pulse: #ffffff;
+
+  /* LEDs — read by the canvas renderer. */
+  --dot-on: #f6f6f4;
+  --dot-off: rgba(255, 255, 255, .075);
+  --dot-red: #ff2b2b;
+  --dot-glow: .55;
+
+  --mark-top: #ffffff;
+  --mark-bottom: #a9a9a9;
+  --field: rgba(0, 0, 0, .5);
+  --menu: rgba(14, 14, 14, .9);
+  --scrim: rgba(0, 0, 0, .55);
+}
+
+/* ── Light: white plastic body, frosted glass, black LEDs ───────── */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --page: #d2d2cd;
+  --page-glow: rgba(255, 255, 255, .55);
+
+  --shell-top: #f4f4f1;
+  --shell-bottom: #e6e6e2;
+  --shell-edge: rgba(0, 0, 0, .1);
+  --shell-edge-top: rgba(255, 255, 255, .95);
+  --shell-drop: 0 50px 90px -45px rgba(0, 0, 0, .45);
+  --grain: .09;
+
+  --ink: #111111;
+  --ink-2: rgba(17, 17, 17, .64);
+  --ink-3: rgba(17, 17, 17, .44);
+  --ink-4: rgba(17, 17, 17, .2);
+  --hair: rgba(0, 0, 0, .08);
+  --hair-2: rgba(0, 0, 0, .15);
+
+  --glass-base: rgba(255, 255, 255, .38);
+  --glass-tint-top: rgba(255, 255, 255, .9);
+  --glass-tint-mid: rgba(255, 255, 255, .35);
+  --glass-edge: rgba(0, 0, 0, .13);
+  --glass-edge-lo: rgba(0, 0, 0, .07);
+  --glass-hi: rgba(255, 255, 255, 1);
+  --glass-bevel: rgba(255, 255, 255, .7);
+  --glass-sheen: rgba(255, 255, 255, .75);
+  --glass-drop: 0 16px 28px -18px rgba(0, 0, 0, .4), 0 1px 3px rgba(0, 0, 0, .08);
+
+  --liquid-tint: rgba(255, 255, 255, .26);
+  --liquid-glint: rgba(255, 255, 255, .65);
+  --liquid-spec: rgba(255, 255, 255, 1);
+  --liquid-spec-lo: rgba(255, 255, 255, .85);
+  --liquid-edge: rgba(0, 0, 0, .07);
+  --liquid-pool: rgba(255, 255, 255, .5);
+  --liquid-depth: rgba(0, 0, 0, .05);
+  --liquid-rim-hi: rgba(255, 255, 255, .95);
+  --liquid-rim-lo: rgba(255, 255, 255, .55);
+  --liquid-drop: rgba(0, 0, 0, .22);
+
+  --frost-top: rgba(255, 255, 255, .72);
+  --frost-bottom: rgba(255, 255, 255, .42);
+  --frost-base: rgba(255, 255, 255, .18);
+  --frost-edge: rgba(255, 255, 255, .95);
+  --frost-hi: #ffffff;
+  --frost-glow: rgba(255, 255, 255, .75);
+  --frost-drop: 0 0 0 1px rgba(0, 0, 0, .07), 0 14px 26px -18px rgba(0, 0, 0, .35);
+  --menu-frost: rgba(246, 246, 243, .74);
+
+  --plateau-top: rgba(255, 255, 255, .78);
+  --plateau-bottom: rgba(255, 255, 255, .34);
+  --plateau-rim: rgba(255, 255, 255, 1);
+  --plateau-edge: rgba(0, 0, 0, .08);
+  --plateau-bevel-hi: rgba(255, 255, 255, .95);
+  --plateau-bevel-lo: rgba(255, 255, 255, .2);
+  --plateau-glare: rgba(255, 255, 255, .55);
+  --plateau-shade: rgba(0, 0, 0, .06);
+  --plateau-seam: rgba(0, 0, 0, .07);
+  --plateau-drop: rgba(0, 0, 0, .3);
+
+  --plate-top: #e9e9e5;
+  --plate-bottom: #d9d9d4;
+  --plate-edge: rgba(0, 0, 0, .1);
+
+  --well-top: #d6d6d1;
+  --well-bottom: #e0e0db;
+  --well-shade: rgba(0, 0, 0, .22);
+  --well-edge: rgba(0, 0, 0, .1);
+  --well-lip: rgba(255, 255, 255, .95);
+  --well-catch: rgba(255, 255, 255, .95);
+
+  --plastic: #e3e3df;
+  --plastic-edge: rgba(0, 0, 0, .14);
+
+  --screen-top: #ececea;
+  --screen-bottom: #d8d8d3;
+
+  --trace: rgba(0, 0, 0, .085);
+  --trace-strong: rgba(0, 0, 0, .13);
+  --pad: rgba(0, 0, 0, .17);
+  --hole: #ecebe7;
+  --silk: rgba(0, 0, 0, .34);
+  --chip: #161616;
+  --chip-edge: rgba(0, 0, 0, .3);
+  --glyph-case: rgba(0, 0, 0, .13);
+  --glyph-base: #d8d7d1;
+  --glyph-dots: rgba(0, 0, 0, .16);
+  --glyph-on: #ffffff;
+  --pulse: #1a1a1a;
+
+  --dot-on: #141414;
+  --dot-off: rgba(0, 0, 0, .075);
+  --dot-red: #e8141d;
+  --dot-glow: .14;
+
+  --mark-top: #222222;
+  --mark-bottom: #555555;
+  --field: rgba(255, 255, 255, .7);
+  --menu: rgba(247, 247, 244, .92);
+  --scrim: rgba(40, 40, 38, .28);
+}
+
+/* ── Colourways ────────────────────────────────────────────────────
+   After the Nothing and CMF finishes. Each is two colours: --cw, the
+   moulded plastic itself (the light theme's body), and --cw-deep, the same
+   hue anodised dark (the dark theme's body). Everything else is mixed from
+   those, so the materials still behave: glass stays clear, chrome stays
+   chrome, the LEDs stay white and red. No data-color is the original
+   black and white. The swatches pick up their own colour from here too. */
+
+[data-color="red"]    { --cw: #e0392d; --cw-deep: #2e0807; }
+[data-color="green"]  { --cw: #c4dd6d; --cw-deep: #141d07; }
+[data-color="pink"]   { --cw: #f1b4c8; --cw-deep: #2c0e1a; }
+[data-color="blue"]   { --cw: #8fb2dc; --cw-deep: #0a1729; }
+[data-color="grey"]   { --cw: #b7b9b6; --cw-deep: #242526; }
+[data-color="yellow"] { --cw: #f4d31f; --cw-deep: #251e03; }
+
+:root[data-color] {
+  --liquid-sat: 1.1;
+  --liquid-rim-sat: 1.1;
+  --liquid-rim-lift: 1.25;
+}
+
+:root[data-color][data-theme="dark"] {
+  --page: color-mix(in oklab, var(--cw-deep), #000 45%);
+  --page-glow: color-mix(in srgb, var(--cw) 7%, transparent);
+
+  --shell-top: color-mix(in oklab, var(--cw-deep), #fff 3%);
+  --shell-bottom: color-mix(in oklab, var(--cw-deep), #000 30%);
+  --shell-edge: color-mix(in srgb, var(--cw) 20%, transparent);
+  --shell-edge-top: color-mix(in srgb, var(--cw) 36%, transparent);
+
+  --glass-base: color-mix(in srgb, var(--cw-deep) 62%, transparent);
+  --frost-base: color-mix(in srgb, var(--cw-deep) 48%, transparent);
+  --menu-frost: color-mix(in srgb, color-mix(in oklab, var(--cw-deep), #000 30%) 76%, transparent);
+  --menu: color-mix(in srgb, color-mix(in oklab, var(--cw-deep), #000 30%) 92%, transparent);
+
+  --plate-top: color-mix(in oklab, var(--cw-deep), #fff 5%);
+  --plate-bottom: color-mix(in oklab, var(--cw-deep), #000 35%);
+  --well-top: color-mix(in oklab, var(--cw-deep), #000 72%);
+  --well-bottom: color-mix(in oklab, var(--cw-deep), #000 58%);
+  --plastic: color-mix(in oklab, var(--cw-deep), #000 22%);
+  --screen-top: color-mix(in oklab, var(--cw-deep), #000 10%);
+  --screen-bottom: color-mix(in oklab, var(--cw-deep), #000 60%);
+
+  --trace: color-mix(in srgb, var(--cw) 13%, transparent);
+  --trace-strong: color-mix(in srgb, var(--cw) 21%, transparent);
+  --hole: color-mix(in oklab, var(--cw-deep), #000 30%);
+  --chip: color-mix(in oklab, var(--cw-deep), #000 62%);
+  --glyph-base: color-mix(in oklab, var(--cw-deep), #fff 5%);
+
+  --mark-bottom: color-mix(in oklab, var(--cw), #a9a9a9 35%);
+}
+
+:root[data-color][data-theme="light"] {
+  --page: color-mix(in oklab, var(--cw), #000 16%);
+  --page-glow: rgba(255, 255, 255, .4);
+
+  --shell-top: color-mix(in oklab, var(--cw), #fff 14%);
+  --shell-bottom: color-mix(in oklab, var(--cw), #000 4%);
+
+  /* Clear parts let more of the colour through than they do over white. */
+  --glass-base: rgba(255, 255, 255, .26);
+  --glass-tint-top: rgba(255, 255, 255, .72);
+  --glass-tint-mid: rgba(255, 255, 255, .22);
+  --plateau-top: rgba(255, 255, 255, .52);
+  --plateau-bottom: rgba(255, 255, 255, .18);
+  --frost-base: color-mix(in srgb, var(--cw) 18%, transparent);
+  --menu-frost: color-mix(in srgb, color-mix(in oklab, var(--cw), #fff 72%) 74%, transparent);
+  --menu: color-mix(in srgb, color-mix(in oklab, var(--cw), #fff 72%) 93%, transparent);
+
+  --plate-top: color-mix(in oklab, var(--cw), #fff 10%);
+  --plate-bottom: color-mix(in oklab, var(--cw), #000 8%);
+  --well-top: color-mix(in oklab, var(--cw), #000 15%);
+  --well-bottom: color-mix(in oklab, var(--cw), #000 8%);
+  --plastic: color-mix(in oklab, var(--cw), #000 9%);
+  --screen-top: color-mix(in oklab, var(--cw), #fff 12%);
+  --screen-bottom: color-mix(in oklab, var(--cw), #000 6%);
+
+  --trace: color-mix(in srgb, color-mix(in oklab, var(--cw), #000 65%) 20%, transparent);
+  --trace-strong: color-mix(in srgb, color-mix(in oklab, var(--cw), #000 65%) 30%, transparent);
+  --hole: color-mix(in oklab, var(--cw), #fff 12%);
+  --glyph-base: color-mix(in oklab, var(--cw), #fff 28%);
+
+  --mark-bottom: color-mix(in oklab, var(--cw), #000 58%);
+}

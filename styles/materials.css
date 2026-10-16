@@ -1,0 +1,369 @@
+/* Materials: screws, smoked plates, glass, plateau, chrome, plastic.
+   Components combine these rather than inventing their own surfaces. */
+
+/* ── Screws ────────────────────────────────────────────────────── */
+
+.screw {
+  --s: calc(12 * var(--u));
+  position: absolute;
+  z-index: 2;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, .55) 0 24%, transparent 26%),
+    radial-gradient(circle at 34% 28%, var(--chrome-hi) 0%, #cfcfcf 22%, #7c7c7c 55%, #2b2b2b 86%);
+  box-shadow:
+    0 0 0 max(1px, calc(1.4 * var(--u))) rgba(0, 0, 0, .6),
+    0 1px 0 max(1px, calc(1.4 * var(--u))) rgba(255, 255, 255, .07),
+    inset 0 -1px 1px rgba(0, 0, 0, .55);
+  transform: rotate(var(--r, 0deg));
+}
+
+/* Torx-ish drive: two crossed slots. */
+.screw::after {
+  content: "";
+  position: absolute;
+  inset: 27%;
+  border-radius: 1px;
+  background:
+    linear-gradient(90deg, transparent 38%, rgba(0, 0, 0, .78) 38% 62%, transparent 62%),
+    linear-gradient(0deg, transparent 38%, rgba(0, 0, 0, .78) 38% 62%, transparent 62%);
+}
+
+/* ── Smoked plate ──────────────────────────────────────────────── */
+
+.plate {
+  position: relative;
+  border-radius: calc(5 * var(--u));
+  background: linear-gradient(155deg, var(--plate-top), var(--plate-bottom));
+  box-shadow:
+    inset 0 1px 0 var(--glass-sheen),
+    inset 0 0 0 1px var(--plate-edge),
+    0 0 0 1px rgba(0, 0, 0, .55),
+    0 22px 34px -22px rgba(0, 0, 0, .95);
+}
+
+.plate > .screw--tl { top: calc(12 * var(--u)); left: calc(12 * var(--u)); }
+.plate > .screw--tr { top: calc(12 * var(--u)); right: calc(12 * var(--u)); }
+.plate > .screw--bl { bottom: calc(12 * var(--u)); left: calc(12 * var(--u)); }
+.plate > .screw--br { bottom: calc(12 * var(--u)); right: calc(12 * var(--u)); }
+
+/* ── Liquid glass ──────────────────────────────────────────────────
+   Clear, not frosted. The centre barely softens what's behind it; the rim
+   is thick, so it bends and brightens the background harder, and a
+   specular line runs round the edge — brightest where the light hits.
+   A glint follows the pointer (--mx/--my, set by js/ui.js liquid()).
+   Hosts must be positioned; nested corners are concentric with --r. */
+
+.liquid {
+  --r: calc(30 * var(--u));
+  border-radius: var(--r);
+  box-shadow:
+    inset 0 1px .5px var(--liquid-spec),
+    inset 0 -1px .5px var(--liquid-spec-lo),
+    inset 0 0 0 .5px var(--liquid-edge),
+    inset 0 calc(16 * var(--u)) calc(26 * var(--u)) calc(-12 * var(--u)) var(--liquid-pool),
+    inset 0 calc(-14 * var(--u)) calc(24 * var(--u)) calc(-14 * var(--u)) var(--liquid-depth),
+    0 calc(20 * var(--u)) calc(44 * var(--u)) calc(-18 * var(--u)) var(--liquid-drop),
+    0 calc(2 * var(--u)) calc(6 * var(--u)) calc(-1 * var(--u)) var(--liquid-drop);
+}
+
+.liquid::before,
+.liquid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* The body of the glass. */
+.liquid::before {
+  background:
+    radial-gradient(circle at var(--mx, 24%) var(--my, -10%), var(--liquid-glint), transparent 46%),
+    var(--liquid-tint);
+  -webkit-backdrop-filter: blur(1.5px) saturate(var(--liquid-sat)) brightness(1.08);
+  backdrop-filter: blur(1.5px) saturate(var(--liquid-sat)) brightness(1.08);
+}
+
+/* The rim: a band that refracts harder, with the specular edge on top. */
+.liquid::after {
+  padding: calc(10 * var(--u));
+  background: linear-gradient(145deg,
+    var(--liquid-rim-hi) 0%, transparent 26%, transparent 64%, var(--liquid-rim-lo) 100%);
+  -webkit-backdrop-filter: blur(7px) saturate(var(--liquid-rim-sat)) brightness(var(--liquid-rim-lift));
+  backdrop-filter: blur(7px) saturate(var(--liquid-rim-sat)) brightness(var(--liquid-rim-lift));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* A small liquid bubble (round buttons on glass). */
+.liquid-bubble {
+  background:
+    radial-gradient(circle at 30% 18%, var(--liquid-glint), transparent 60%),
+    var(--liquid-tint);
+  box-shadow:
+    inset 0 1px .5px var(--liquid-spec),
+    inset 0 -1px .5px var(--liquid-spec-lo),
+    inset 0 0 0 .5px var(--liquid-edge),
+    0 4px 12px -4px var(--liquid-drop);
+  -webkit-backdrop-filter: blur(6px) saturate(var(--liquid-sat)) brightness(1.1);
+  backdrop-filter: blur(6px) saturate(var(--liquid-sat)) brightness(1.1);
+}
+
+/* ── Well ──────────────────────────────────────────────────────────
+   The opposite of a plate: a pocket sunk into the body. Light from above
+   leaves the upper wall in shadow and catches the lower lip; just below the
+   opening, the body's own edge picks up a sliver of light. No drop shadow —
+   nothing here stands proud. */
+
+.well {
+  position: relative;
+  border-radius: calc(8 * var(--u));
+  background: linear-gradient(180deg, var(--well-top), var(--well-bottom));
+  box-shadow:
+    inset 0 0 0 1px var(--well-edge),
+    inset 0 calc(7 * var(--u)) calc(12 * var(--u)) calc(-3 * var(--u)) var(--well-shade),
+    inset 0 calc(2 * var(--u)) calc(3 * var(--u)) var(--well-shade),
+    inset 0 -1px 0 var(--well-lip),
+    0 1px 0 var(--well-catch);
+}
+
+.well > .screw--tl { top: calc(12 * var(--u)); left: calc(12 * var(--u)); }
+.well > .screw--tr { top: calc(12 * var(--u)); right: calc(12 * var(--u)); }
+.well > .screw--bl { bottom: calc(12 * var(--u)); left: calc(12 * var(--u)); }
+.well > .screw--br { bottom: calc(12 * var(--u)); right: calc(12 * var(--u)); }
+
+/* ── Glass ─────────────────────────────────────────────────────────
+   Thick clear acrylic: bright top edge, a dark line just inside it where
+   the bevel turns, and a soft diagonal sheen across the face. */
+
+.glass {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, var(--glass-tint-top) 0%, var(--glass-tint-mid) 46%, transparent 100%),
+    var(--glass-base);
+  border: 1px solid var(--glass-edge);
+  border-bottom-color: var(--glass-edge-lo);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    inset 0 0 0 max(1px, calc(1.5 * var(--u))) var(--glass-bevel),
+    var(--glass-drop);
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(112deg, var(--glass-sheen) 0%, transparent 30%),
+    radial-gradient(140% 70% at 18% -10%, var(--glass-sheen), transparent 55%);
+}
+
+/* ── Frosted glass ─────────────────────────────────────────────────
+   Sandblasted acrylic. Light scatters inside it, so whatever sits behind
+   is only a soft glow; the face has a fine tooth; and the edges, where the
+   scattered light escapes, glow brighter than the middle. No sharp
+   specular line — that's what tells it apart from the clear glass above. */
+
+.frost {
+  position: relative;
+  border: 1px solid var(--frost-edge);
+  border-bottom-color: color-mix(in srgb, var(--frost-edge) 55%, transparent);
+  background:
+    var(--frost-grain) 0 0 / 160px 160px,
+    linear-gradient(180deg, var(--frost-top), var(--frost-bottom)),
+    var(--frost-base);
+  box-shadow:
+    inset 0 1px 0 var(--frost-hi),
+    inset 0 0 calc(16 * var(--u)) var(--frost-glow),
+    var(--frost-drop);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(1.04);
+  backdrop-filter: blur(18px) saturate(1.5) brightness(1.04);
+}
+
+/* ── Plateau ───────────────────────────────────────────────────────
+   After the Phone (4a) Pro's camera plateau: a slab of clear acrylic standing
+   proud of the body, corners far rounder than the chassis, and a pillowed
+   edge that catches the overhead light along the top and fades round the
+   sides. Children nest at --r minus their inset so the curves stay parallel. */
+
+.plateau {
+  --r: calc(48 * var(--u));
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--r);
+  background: linear-gradient(180deg, var(--plateau-top), var(--plateau-bottom));
+  box-shadow:
+    inset 0 1px 0 var(--plateau-rim),
+    inset 0 0 0 1px var(--plateau-edge),
+    inset 0 calc(-10 * var(--u)) calc(22 * var(--u)) calc(-6 * var(--u)) var(--plateau-shade),
+    0 0 0 max(1px, calc(1.5 * var(--u))) var(--plateau-seam),
+    0 calc(28 * var(--u)) calc(46 * var(--u)) calc(-24 * var(--u)) var(--plateau-drop),
+    0 calc(3 * var(--u)) calc(7 * var(--u)) calc(-1 * var(--u)) var(--plateau-drop);
+}
+
+/* The rounded edge: a band just inside the rim, lit from above. */
+.plateau::before,
+.plateau::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.plateau::before {
+  padding: calc(7 * var(--u));
+  background: linear-gradient(180deg,
+    var(--plateau-bevel-hi) 0%, var(--plateau-bevel-lo) 22%, transparent 50%,
+    var(--plateau-bevel-lo) 82%, var(--plateau-bevel-hi) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: .55;
+}
+
+/* Glare across the face of the acrylic. */
+.plateau::after {
+  background: radial-gradient(110% 70% at 12% -12%, var(--plateau-glare), transparent 56%);
+}
+
+/* ── Chrome ────────────────────────────────────────────────────── */
+
+.chrome {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .06) 0 1px, rgba(0, 0, 0, .05) 1px 2px, transparent 2px 3px),
+    linear-gradient(180deg, #8c8c8c 0%, var(--chrome-hi) 13%, #c9c9c9 27%, #6a6a6a 47%, #2d2d2d 66%, #444 84%, #9a9a9a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .9),
+    inset 0 -1px 0 rgba(0, 0, 0, .55),
+    0 0 0 1px rgba(0, 0, 0, .85),
+    0 12px 20px -10px rgba(0, 0, 0, .9);
+}
+
+/* ── Type ──────────────────────────────────────────────────────── */
+
+.label {
+  margin: 0;
+  font: 400 max(10px, calc(15 * var(--u)))/1 var(--font-mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* ── Controls ──────────────────────────────────────────────────── */
+
+.icon-btn {
+  --size: calc(34 * var(--u));
+  display: inline-grid;
+  place-items: center;
+  width: max(28px, var(--size));
+  height: max(28px, var(--size));
+  border-radius: calc(6 * var(--u));
+  color: var(--ink);
+  transition: background var(--t-1), color var(--t-1), transform var(--t-1) var(--ease-press);
+}
+
+.icon-btn svg {
+  width: 58%;
+  height: 58%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon-btn svg.fill {
+  fill: currentColor;
+  stroke: none;
+}
+
+.icon-btn:hover { background: var(--hair); }
+.icon-btn:active { transform: scale(.92); }
+.icon-btn:disabled { opacity: .3; cursor: default; background: none; transform: none; }
+
+.panel__head {
+  display: flex;
+  align-items: center;
+  gap: calc(14 * var(--u));
+  height: calc(58 * var(--u));
+}
+
+.panel__head .icon-btn:last-child {
+  margin-left: auto;
+  margin-right: calc(-8 * var(--u));
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font: 400 11px/1 var(--font-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  transition: background var(--t-1), border-color var(--t-1), transform var(--t-1) var(--ease-press);
+}
+
+.btn:active { transform: scale(.97); }
+.btn--ghost { color: var(--ink-2); border: 1px solid var(--hair-2); }
+.btn--ghost:hover { color: var(--ink); background: var(--hair); }
+
+.btn--primary {
+  color: var(--ink);
+  border: 1px solid var(--glass-edge);
+  background: linear-gradient(180deg, var(--glass-tint-top), transparent), var(--glass-base);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+}
+
+.btn--primary::before,
+.dot-led {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red-led);
+  box-shadow: 0 0 6px var(--red-glow);
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field__label {
+  font: 400 10px/1 var(--font-mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.field__input {
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--hair-2);
+  background: var(--field);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .25);
+  font-size: 15px;
+  caret-color: var(--red-led);
+  outline: none;
+  transition: border-color var(--t-1);
+}
+
+.field__input:focus { border-color: var(--ink-3); }
+.field__input::placeholder { color: var(--ink-4); }

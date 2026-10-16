@@ -1,0 +1,125 @@
+/* Glyph Matrix — a bezel-less round screen, and the signature column. */
+
+/* The screen is black glass in either theme: nothing frames it, the pixels
+   run right to its edge, and its outline is the pixel grid itself. */
+.glyph {
+  --dot-on: #ffffff;
+  --dot-off: rgba(255, 255, 255, .085);
+  --dot-red: #ff2b2b;
+  --dot-glow: .95;
+  display: grid;
+  place-items: center;
+}
+
+.glyph__face {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: calc(238 * var(--u));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, #0c0c0c, #020202 72%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .07),
+    0 calc(16 * var(--u)) calc(34 * var(--u)) calc(-14 * var(--u)) rgba(0, 0, 0, .95);
+  transition: transform var(--t-1) var(--ease-press);
+}
+
+:root[data-theme="light"] .glyph__face {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .14),
+    0 calc(16 * var(--u)) calc(34 * var(--u)) calc(-14 * var(--u)) rgba(0, 0, 0, .45);
+}
+
+.glyph__face:active { transform: scale(.985); }
+.glyph__face:focus-visible { outline-offset: 5px; border-radius: 50%; }
+
+.matrix {
+  display: block;
+}
+
+.glyph__face .matrix {
+  width: 96%;
+  aspect-ratio: 1;
+}
+
+/* The cover glass: one soft reflection, no frame. */
+.glyph__glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(85% 55% at 30% 6%, rgba(255, 255, 255, .09), transparent 60%);
+}
+
+/* ── Signature column ──────────────────────────────────────────── */
+
+.signature {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+.led {
+  position: absolute;
+  left: calc(4 * var(--u));
+  top: calc(176 * var(--u));
+  width: calc(7 * var(--u));
+  height: calc(7 * var(--u));
+  min-width: 5px;
+  min-height: 5px;
+  border-radius: 50%;
+  background: var(--red-led);
+  box-shadow: 0 0 calc(4 * var(--u)) var(--red-led), 0 0 calc(12 * var(--u)) var(--red-glow);
+}
+
+.led[data-state="pulse"] { animation: led-pulse 1.8s ease-in-out infinite; }
+.led[data-state="blink"] { animation: led-blink .6s steps(2, jump-none) infinite; }
+
+@keyframes led-pulse {
+  50% { opacity: .35; box-shadow: none; }
+}
+
+@keyframes led-blink {
+  50% { opacity: .1; }
+}
+
+.signature__by {
+  position: absolute;
+  left: 0;
+  top: calc(194 * var(--u));
+  writing-mode: vertical-rl;
+  font: 700 max(10px, calc(15 * var(--u)))/1 var(--font-dot);
+  font-variation-settings: "ROND" 100;
+  letter-spacing: .1em;
+  color: var(--ink-2);
+}
+
+.wordmark {
+  margin-left: calc(6 * var(--u));
+  font: 700 max(18px, calc(28 * var(--u)))/.8 var(--font-dot);
+  font-variation-settings: "ROND" 100;
+  letter-spacing: .015em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+@container chassis (width < 960px) {
+  .signature {
+    align-items: center;
+    gap: 14px;
+    justify-content: center;
+  }
+
+  .led,
+  .signature__by {
+    position: static;
+    writing-mode: horizontal-tb;
+  }
+
+  .wordmark {
+    order: -1;
+    margin: 0 auto 0 0;
+    font-size: 22px;
+  }
+}

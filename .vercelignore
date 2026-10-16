@@ -1,0 +1,9 @@
+.vercel
+.claude
+.legacy-glass
+.DS_Store
+README.md
+wallhaven-*.png
+tests
+dist
+node_modules

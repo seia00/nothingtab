@@ -1,0 +1,247 @@
+/* Page, chassis and layout. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--page);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  color: var(--ink);
+  font: 400 14px/1.35 var(--font-sans);
+  background:
+    radial-gradient(90% 60% at 50% 0%, var(--page-glow), transparent 70%),
+    var(--page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+svg {
+  display: block;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:focus-visible {
+  outline: 1px solid var(--red-led);
+  outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.mark-stop-top { stop-color: var(--mark-top); }
+.mark-stop-bottom { stop-color: var(--mark-bottom); }
+
+/* ── Stage + chassis ───────────────────────────────────────────── */
+
+.stage {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+}
+
+.chassis {
+  width: 100%;
+  container: chassis / inline-size;
+}
+
+/* On a desktop-sized window the device fills it, whatever its shape: the
+   chassis takes the whole window (bar a thin gutter) and becomes a size
+   container, so the layout below can scale against both dimensions. Very
+   wide monitors stop at 2.6:1 rather than stretching the search bar for ever. */
+@media (min-width: 1000px) and (min-height: 540px) {
+  .stage {
+    --gutter: clamp(10px, 1.1vmin, 16px);
+    height: 100svh;
+    min-height: 0;
+    padding: var(--gutter);
+    place-items: stretch;
+  }
+
+  .chassis {
+    height: 100%;
+    max-width: calc((100svh - 2 * var(--gutter)) * 2.6);
+    margin-inline: auto;
+    container-type: size;
+  }
+
+  .shell { height: 100%; }
+}
+
+.shell {
+  /* One mockup pixel, scaled so the whole 1493 × 772 design fits both ways. */
+  --u: clamp(.6px, min(100cqw / 1493, 100cqh / 772), 2.4px);
+  /* Whatever the window has beyond the mockup's shape. Most spare width goes
+     to the search bar and favorites, a little to the gaps around them; most
+     spare height goes to the favorites. */
+  --spare-w: max(0px, 100cqw - 1493 * var(--u));
+  --spare-h: max(0px, 100cqh - 772 * var(--u));
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns:
+    [glyph-start sig-start] calc(240 * var(--u))
+    [glyph-end sig-end] calc(30 * var(--u) + var(--spare-w) * .12)
+    [fav-start rule-start] calc(22 * var(--u))
+    [search-start] minmax(0, 1fr)
+    [search-end] calc(47 * var(--u))
+    [player-start] calc(47 * var(--u))
+    [fav-end] calc(33 * var(--u) + var(--spare-w) * .12)
+    [console-start] calc(345 * var(--u))
+    [console-end] calc(12 * var(--u))
+    [player-end];
+  grid-template-rows:
+    [top-start] calc(245 * var(--u) + var(--spare-h) * .18)
+    [top-end mid-start] minmax(calc(434 * var(--u)), 1fr)
+    [mid-end foot-start] calc(16 * var(--u))
+    [foot-end];
+  padding: calc(37 * var(--u)) calc(33 * var(--u)) calc(42 * var(--u));
+  border-radius: calc(10 * var(--u));
+  background: linear-gradient(180deg, var(--shell-top), var(--shell-bottom));
+  box-shadow:
+    inset 0 1px 0 var(--shell-edge-top),
+    inset 0 0 0 1px var(--shell-edge),
+    var(--shell-drop);
+}
+
+/* Moulding grain — the difference between "a dark div" and matte plastic. */
+.shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Overhead light falling across the top of the body. */
+.shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(70% 55% at 35% 0%, var(--page-glow), transparent 70%);
+}
+
+.shell > .screw--tl { top: calc(14 * var(--u)); left: calc(14 * var(--u)); }
+.shell > .screw--tr { top: calc(14 * var(--u)); right: calc(14 * var(--u)); }
+.shell > .screw--bl { bottom: calc(14 * var(--u)); left: calc(14 * var(--u)); }
+.shell > .screw--br { bottom: calc(14 * var(--u)); right: calc(14 * var(--u)); }
+
+/* ── Placement (wide) ──────────────────────────────────────────── */
+
+.glyph { grid-column: glyph; grid-row: top; align-self: center; }
+.search-area { grid-column: search; grid-row: top; align-self: center; }
+.player { grid-column: player; grid-row: top; align-self: start; }
+.signature { grid-column: sig; grid-row: mid-start / foot-end; }
+.favorites { grid-column: fav; grid-row: mid; margin-top: calc(-4 * var(--u)); }
+.console { grid-column: console; grid-row: mid-start / foot-end; }
+
+/* ── Medium: two columns, scrolls ──────────────────────────────── */
+
+@container chassis (width < 960px) {
+  .shell {
+    --u: .85px;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto;
+    column-gap: 24px;
+    row-gap: 24px;
+    padding: 34px 28px 30px;
+  }
+
+  .search-area { grid-column: 1 / -1; grid-row: 1; }
+  .glyph { grid-column: 1; grid-row: 2; margin: 0; }
+  .player { grid-column: 2; grid-row: 2; align-self: stretch; }
+  .favorites { grid-column: 1 / -1; grid-row: 3; margin: 0; }
+  .console { grid-column: 1 / -1; grid-row: 4; }
+  .signature { grid-column: 1 / -1; grid-row: 5; }
+}
+
+/* ── Narrow: phone ─────────────────────────────────────────────── */
+
+@container chassis (width < 600px) {
+  .shell {
+    --u: .74px;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 30px 16px 26px;
+    row-gap: 18px;
+  }
+
+  .search-area { grid-row: 1; }
+  .player { grid-column: 1; grid-row: 2; }
+  .favorites { grid-row: 3; }
+  .glyph { grid-column: 1; grid-row: 4; justify-self: center; }
+  .console { grid-row: 5; }
+  .signature { grid-row: 6; }
+}
+
+@media (max-width: 640px) {
+  .stage { padding: 12px; place-items: start center; }
+  .chassis { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Theme swap: the new theme is revealed as a circle from the switch. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}

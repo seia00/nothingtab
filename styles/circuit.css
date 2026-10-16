@@ -1,0 +1,101 @@
+/* The circuit layer under the chassis surface, and the Phone (1) Glyph
+   strips that sit in it. Raw but clean: hairline copper, round vias, a
+   silkscreen label where a bus needs one, nothing ornamental. */
+
+.circuit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+@container chassis (width < 960px) {
+  .circuit { display: none; }
+}
+
+.trace {
+  fill: none;
+  stroke: var(--trace);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trace--coil,
+.trace--strong { stroke: var(--trace-strong); }
+
+.via { fill: var(--pad); }
+.via-hole { fill: var(--hole); }
+.pad { fill: var(--pad); }
+.part-body { fill: var(--trace-strong); }
+.tp { fill: none; stroke: var(--pad); stroke-width: 1.2; }
+
+.chip {
+  fill: var(--chip);
+  stroke: var(--chip-edge);
+  stroke-width: 1;
+}
+
+.chip-dot { fill: var(--silk); }
+
+.pcb-silk text {
+  fill: var(--silk);
+  font-family: var(--font-mono);
+  letter-spacing: .14em;
+}
+
+/* ── Glyph strips ──────────────────────────────────────────────── */
+
+.gstrip path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gstrip__case { stroke: var(--glyph-case); }
+.gstrip__base { stroke: var(--glyph-base); }
+.gstrip__dots { stroke: var(--glyph-dots); }
+.gstrip__case-fill { fill: var(--glyph-case); }
+.gstrip__base-fill { fill: var(--glyph-base); }
+
+.gstrip__lit,
+.gstrip__lit-fill {
+  opacity: 0;
+  transition: opacity var(--t-3) var(--ease-out), stroke-dasharray .8s var(--ease-out);
+}
+
+.gstrip__lit { stroke: var(--glyph-on); }
+.gstrip__lit-fill { fill: var(--glyph-on); }
+
+.gstrip.is-breathing .gstrip__lit {
+  animation: glyph-breathe 1.15s ease-in-out infinite alternate;
+}
+
+@keyframes glyph-breathe {
+  from { opacity: .18; }
+  to { opacity: 1; }
+}
+
+.pulse {
+  fill: none;
+  stroke: var(--pulse);
+  stroke-linecap: round;
+  filter: url(#glyph-glow);
+}
+
+/* Glyph A — the camera ring around the Now Playing sleeve. */
+.player__lens {
+  position: relative;
+  grid-row: 1 / 4;
+}
+
+.glyph-a {
+  position: absolute;
+  left: calc(-11 * var(--u));
+  top: calc(-11 * var(--u));
+  width: calc(100% + 22 * var(--u));
+  height: calc(100% + 22 * var(--u));
+  overflow: visible;
+  pointer-events: none;
+}

@@ -1,0 +1,375 @@
+/* Console: dot display, pager, theme switch, Glyph button, timer tube. */
+
+.console {
+  position: relative;
+}
+
+/* Sunk into the body. Height follows the canvas aspect: 215u at 345u wide. */
+.display {
+  margin-top: calc(5 * var(--u));
+  padding: calc(28 * var(--u)) calc(27 * var(--u));
+  display: grid;
+}
+
+.display__face {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: calc(3 * var(--u));
+}
+
+.display__face .matrix {
+  width: 100%;
+  aspect-ratio: 35 / 19;
+}
+
+.display__face:focus-visible { outline-offset: calc(10 * var(--u)); }
+
+/* City entry overlays the weather page in place. */
+.city {
+  position: absolute;
+  inset: calc(28 * var(--u)) calc(27 * var(--u));
+  display: grid;
+  place-items: center;
+  border-radius: calc(4 * var(--u));
+  background: color-mix(in srgb, var(--well-bottom) 88%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.city__input {
+  width: 82%;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--ink-3);
+  background: transparent;
+  outline: 0;
+  font: 400 15px/1 var(--font-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-align: center;
+  caret-color: var(--red-led);
+}
+
+.city__input::placeholder { color: var(--ink-4); }
+
+/* ── Timer tube: a glass vial with a red filament, sticking out of the
+   chassis edge like a side button. Drag it to set the timer. */
+
+.tube {
+  position: absolute;
+  top: calc(32 * var(--u));
+  left: calc(100% + 5 * var(--u));
+  width: calc(40 * var(--u));
+  height: calc(128 * var(--u));
+  border-radius: calc(20 * var(--u));
+  cursor: ns-resize;
+  touch-action: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, .05) 24%,
+      rgba(0, 0, 0, .3) 52%, rgba(255, 255, 255, .06) 80%, rgba(255, 255, 255, .22) 100%),
+    rgba(18, 18, 18, .6);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .32),
+    inset 0 0 0 calc(4 * var(--u)) rgba(0, 0, 0, .32),
+    0 0 0 1px rgba(0, 0, 0, .75),
+    0 10px 18px -8px rgba(0, 0, 0, .95);
+}
+
+:root[data-theme="light"] .tube {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, .95) 0%, rgba(255, 255, 255, .4) 24%,
+      rgba(0, 0, 0, .1) 52%, rgba(255, 255, 255, .5) 80%, rgba(255, 255, 255, .9) 100%),
+    rgba(225, 225, 220, .7);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, .14),
+    inset 0 0 0 calc(4 * var(--u)) rgba(255, 255, 255, .45),
+    0 10px 18px -10px rgba(0, 0, 0, .4);
+}
+
+/* Specular streak down the curved face. */
+.tube::before {
+  content: "";
+  position: absolute;
+  left: 22%;
+  top: 12%;
+  bottom: 12%;
+  width: calc(3 * var(--u));
+  border-radius: 2px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, .6), transparent);
+}
+
+.tube__rod {
+  --level: .42;
+  position: absolute;
+  left: 50%;
+  bottom: calc(14 * var(--u));
+  width: max(2px, calc(4 * var(--u)));
+  height: calc(var(--level) * (100% - 28 * var(--u)));
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: var(--red-led);
+  box-shadow: 0 0 calc(4 * var(--u)) var(--red-led), 0 0 calc(12 * var(--u)) var(--red-glow);
+  transition: height var(--t-2) var(--ease-out);
+}
+
+.tube[data-state="running"] .tube__rod { animation: rod-breathe 2.4s ease-in-out infinite; }
+.tube[data-state="done"] .tube__rod { animation: led-blink .6s steps(2, jump-none) infinite; }
+.tube[data-state="dragging"] .tube__rod { transition: none; }
+
+@keyframes rod-breathe {
+  50% { opacity: .55; }
+}
+
+/* ── Pager ─────────────────────────────────────────────────────── */
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: calc(20 * var(--u));
+  margin-top: calc(43 * var(--u));
+  margin-left: calc(38 * var(--u));
+  min-width: 0;
+}
+
+.pager__dots {
+  display: flex;
+  gap: calc(15 * var(--u));
+  flex: none;
+}
+
+.pager__dot {
+  position: relative;
+  width: max(11px, calc(16 * var(--u)));
+  height: max(11px, calc(16 * var(--u)));
+  border-radius: calc(2 * var(--u));
+  border: 1px solid var(--ink-3);
+  transition: background var(--t-2), border-color var(--t-2), box-shadow var(--t-2);
+}
+
+/* Bigger touch target than the square it draws. */
+.pager__dot::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+}
+
+.pager__dot:hover { border-color: var(--ink); }
+
+.pager__dot[aria-current="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  box-shadow: 0 0 calc(9 * var(--u)) color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
+.pager__label {
+  display: grid;
+  gap: calc(5 * var(--u));
+  min-width: 0;
+  font: 400 max(9px, calc(11 * var(--u)))/1.1 var(--font-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.pager__label > * {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pager__label b {
+  font-weight: 400;
+  color: var(--ink);
+}
+
+/* ── Finish: the theme switch and the colourway swatches ─────────── */
+
+.finish {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(14 * var(--u)) calc(24 * var(--u));
+  margin-top: calc(40 * var(--u));
+  margin-left: calc(30 * var(--u));
+}
+
+/* Theme switch: plastic track, red filament, chrome knob. */
+.switch {
+  --h: max(20px, calc(30 * var(--u)));
+  position: relative;
+  flex: none;
+  display: block;
+  width: calc(var(--h) * 85 / 30);
+  height: var(--h);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .35), rgba(255, 255, 255, .03)), var(--plastic);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, .55),
+    inset 0 0 0 1px var(--plastic-edge),
+    0 1px 0 rgba(255, 255, 255, .06);
+}
+
+.switch__led {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--h) * .5);
+  width: calc(var(--h) * .9);
+  height: max(2px, calc(var(--h) * .1));
+  transform: translateY(-50%);
+  border-radius: 2px;
+  background: var(--red-led);
+  box-shadow: 0 0 calc(var(--h) * .18) var(--red-led), 0 0 calc(var(--h) * .35) var(--red-glow);
+  transition: left var(--t-3) var(--ease-out);
+}
+
+.switch__knob {
+  position: absolute;
+  top: calc(var(--h) * .1);
+  left: calc(var(--h) * (85 / 30 - .9));
+  width: calc(var(--h) * .8);
+  height: calc(var(--h) * .8);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, .5) 0 20%, transparent 22%),
+    radial-gradient(circle at 34% 28%, var(--chrome-hi), #bdbdbd 30%, #5c5c5c 70%, #262626);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, .7),
+    inset 0 0 0 calc(var(--h) * .07) rgba(255, 255, 255, .18),
+    0 2px 5px rgba(0, 0, 0, .6);
+  transition: left var(--t-3) var(--ease-out);
+}
+
+.switch[aria-checked="false"] .switch__knob { left: calc(var(--h) * .1); }
+.switch[aria-checked="false"] .switch__led { left: calc(var(--h) * (85 / 30 - 1.4)); }
+
+/* Colourway swatches: moulded beads of each finish, like the colour chips
+   on a product page. The chosen one sits in a thin ring. */
+.swatches {
+  display: flex;
+  gap: calc(10 * var(--u));
+}
+
+.swatch {
+  --s: max(12px, calc(17 * var(--u)));
+  position: relative;
+  flex: none;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, .55), transparent 52%),
+    var(--cw);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, .22),
+    inset 0 calc(-2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, .28),
+    0 1px 2px rgba(0, 0, 0, .45);
+  transition: transform var(--t-2) var(--ease-out);
+}
+
+/* Classic: the original black body and white one, split. */
+.swatch[data-color="none"] {
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, .45), transparent 52%),
+    linear-gradient(135deg, #f2f2ee 50%, #0d0d0d 50%);
+}
+
+/* A bigger target than the bead it draws. */
+.swatch::before {
+  content: "";
+  position: absolute;
+  inset: calc(-5 * var(--u));
+}
+
+.swatch::after {
+  content: "";
+  position: absolute;
+  inset: calc(-4 * var(--u));
+  border-radius: 50%;
+  border: 1px solid var(--ink-2);
+  opacity: 0;
+  transform: scale(.8);
+  transition: opacity var(--t-2), transform var(--t-2) var(--ease-out);
+}
+
+.swatch:hover { transform: translateY(-1px); }
+.swatch:active { transform: scale(.9); }
+.swatch[aria-checked="true"]::after { opacity: 1; transform: none; }
+.swatch:focus-visible { outline-offset: calc(6 * var(--u)); }
+
+/* ── Glyph button: the chrome slab ─────────────────────────────── */
+
+.glyph-btn {
+  position: absolute;
+  right: calc(-8 * var(--u));
+  bottom: calc(4 * var(--u));
+  width: calc(155 * var(--u));
+  height: calc(44 * var(--u));
+  min-height: 30px;
+  border-radius: calc(9 * var(--u));
+  transition: transform var(--t-1) var(--ease-press), filter var(--t-2);
+}
+
+.glyph-btn:hover { filter: brightness(1.08); }
+
+.glyph-btn:active {
+  transform: translateY(1px);
+  filter: brightness(.94);
+}
+
+.glyph-btn .screw--l,
+.glyph-btn .screw--r {
+  top: 50%;
+  margin-top: calc(-6 * var(--u));
+}
+
+.glyph-btn .screw--l { left: calc(13 * var(--u)); }
+.glyph-btn .screw--r { right: calc(13 * var(--u)); }
+
+/* ── Smaller chassis: the console lays out flat ────────────────── */
+
+@container chassis (width < 960px) {
+  .console {
+    display: grid;
+    grid-template-columns: minmax(0, 360px) auto minmax(0, 1fr);
+    grid-template-rows: repeat(3, auto);
+    column-gap: 22px;
+    row-gap: 18px;
+    align-items: center;
+  }
+
+  .display { grid-column: 1; grid-row: 1 / 4; margin: 0; }
+
+  .tube {
+    position: relative;
+    top: auto;
+    left: auto;
+    grid-column: 2;
+    grid-row: 1 / 4;
+  }
+
+  .pager { grid-column: 3; grid-row: 1; margin: 0; }
+  .finish { grid-column: 3; grid-row: 2; margin: 0; }
+
+  .glyph-btn {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    grid-column: 3;
+    grid-row: 3;
+  }
+}
+
+@container chassis (width < 600px) {
+  .console {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+  }
+
+  .display { grid-column: 1; grid-row: 1; }
+  .tube { grid-column: 2; grid-row: 1; }
+  .pager { grid-column: 1 / -1; grid-row: 2; }
+  .finish { grid-column: 1; grid-row: 3; }
+  .glyph-btn { grid-column: 2; grid-row: 3; }
+}

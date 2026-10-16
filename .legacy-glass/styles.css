@@ -1,0 +1,758 @@
+/* ─────────────────────────────────────────────────────────────
+   Palette sampled directly off the wallpaper:
+   canvas #0a0a0f · ring highlight #64bdff · planet bands #527dff
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --void: #0a0a0f;
+  --ink: #e8ecf5;
+  --ink-dim: rgba(232, 236, 245, 0.56);
+  --ink-faint: rgba(232, 236, 245, 0.34);
+  --cyan: #64bdff;
+  --indigo: #527dff;
+
+  --wall-fallback: url("assets/wallpaper.png");
+  --wall: image-set(
+    url("assets/wallpaper.webp") type("image/webp"),
+    url("assets/wallpaper.png") type("image/png")
+  );
+
+  /* The rims get a quarter-resolution copy. Ten lenses each resampling the full
+     9.5 MP source was the single largest paint cost on the page, and the band is
+     magnified and blurred anyway — the extra pixels were never visible. */
+  --wall-lens: url("assets/wallpaper-lens.webp");
+
+  --sans: -apple-system, "SF Pro Display", BlinkMacSystemFont, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+  /* Type. Mono is for system voice — labels, badges, metadata. Sans is for
+     anything you or the web wrote. Sizes are a scale, not per-element guesses. */
+  --fs-badge: 9px;
+  --fs-label: 10.5px;
+  --fs-meta: 12px;
+  --fs-body: 13.5px;
+  --fs-input: 15px;
+  --fs-display: clamp(52px, 5.4vw, 82px);
+
+  /* Space, 4px base */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+
+  /* Radius. Nested corners must equal outer − padding or the gap between them
+     visibly tapers; --r-inner is --r-panel minus the 7px panel padding. */
+  --r-panel: 26px;
+  --r-tile: 22px;
+  --r-inner: 19px;
+  --r-chip: 8px;
+
+  /* Elevation */
+  --e1: 0 8px 20px -14px rgba(0, 0, 0, 0.9);
+  --e2: 0 18px 40px -22px rgba(0, 0, 0, 0.95);
+  --e3: 0 26px 60px -24px rgba(0, 0, 0, 0.95);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--void);
+  background-image: var(--wall-fallback);
+  background-image: var(--wall);
+  background-size: var(--bg-size, cover);
+  background-position: var(--bg-pos, center);
+  background-repeat: no-repeat;
+  font-family: var(--sans);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+  user-select: none;
+}
+
+/* Darkens the empty left third so type reads, and leaves the planet alone. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(100deg, rgba(5, 5, 9, 0.8) 0%, rgba(5, 5, 9, 0.5) 26%,
+      rgba(5, 5, 9, 0.1) 46%, transparent 62%),
+    radial-gradient(110% 75% at 14% 52%, rgba(82, 125, 255, 0.12), transparent 62%);
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+
+.column {
+  position: fixed;
+  z-index: 1;
+  left: clamp(40px, 4.6vw, 96px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(432px, 40vw);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+/* ── Header: clock, date, weather ───────────────────────────── */
+
+.clock {
+  font-size: var(--fs-display);
+  font-weight: 200;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 30px rgba(82, 125, 255, 0.35);
+}
+
+.clock .period {
+  font-size: 0.32em;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(100, 189, 255, 0.75);
+  vertical-align: 0.9em;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-top: var(--s3);
+  font-family: var(--mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.meta .sep { color: rgba(100, 189, 255, 0.4); }
+
+.weather {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: color 0.25s var(--ease);
+}
+.weather:hover { color: var(--cyan); }
+.weather[hidden] { display: none; }
+.weather .sym {
+  display: block;
+  width: 14px;
+  color: rgba(100, 189, 255, 0.8);
+}
+.weather .sym svg { width: 100%; height: auto; display: block; }
+
+.weather-input {
+  width: 150px;
+  border: 0;
+  border-bottom: 1px solid rgba(100, 189, 255, 0.4);
+  background: none;
+  font: inherit;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  outline: none;
+  padding-bottom: 2px;
+}
+
+/* ── Glass ──────────────────────────────────────────────────── */
+
+.glass {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-tile);
+  background: linear-gradient(155deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.04) 46%,
+    rgba(255, 255, 255, 0.075) 100%);
+  backdrop-filter: blur(18px) saturate(1.7) brightness(1.06);
+  -webkit-backdrop-filter: blur(18px) saturate(1.7) brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 30px -8px rgba(100, 189, 255, 0.5),
+    inset 0 -22px 40px -30px rgba(82, 125, 255, 0.55),
+    0 18px 40px -22px rgba(0, 0, 0, 0.95);
+}
+
+/* Refracted rim. Holds a magnified copy of the wallpaper aligned to the page
+   behind it (JS sets --lens-size/--lens-pos), masked down to the edge band —
+   so the ASCII glyphs genuinely bend and enlarge as they pass under the glass.
+   Safari won't run SVG filters through backdrop-filter, but it will through an
+   image layer, which is why this is a real element and not a backdrop.
+
+   The magnification is what sells the refraction. A turbulence displacement on
+   top of it read as almost nothing but cost more than everything else on the
+   page combined, so it's gone — add `filter: url(#liquid)` back and restore the
+   <filter> in index.html if you ever want the organic wobble. */
+.lens {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: var(--rim, 13px);
+  background-image: var(--wall-lens);
+  background-repeat: no-repeat;
+  background-size: var(--lens-size, cover);
+  background-position: var(--lens-pos, center);
+  filter: blur(0.4px) saturate(1.6) brightness(1.3);
+  opacity: 0.8;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  transition: opacity 0.4s var(--ease);
+}
+
+/* Specular sheen, swept on hover. */
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(105deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.14) 45%,
+    rgba(190, 228, 255, 0.30) 50%,
+    rgba(255, 255, 255, 0.10) 56%,
+    transparent 70%);
+  transform: translateX(-130%);
+}
+
+/* Hairline that catches light top-left and falls away bottom-right. */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(150deg,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(100, 189, 255, 0.38) 24%,
+    rgba(255, 255, 255, 0.05) 48%,
+    rgba(82, 125, 255, 0.3) 76%,
+    rgba(255, 255, 255, 0.45) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  transition: opacity 0.3s var(--ease);
+}
+
+/* ── Tiles ──────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s4);
+}
+
+/* Must be positioned: the remove badge anchors to it, and without this all
+   eight stack on the column's top-right corner instead of their own tile. */
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s2);
+}
+
+/* Each tile carries its logo's colour as --brand (set in app.js) and bleeds a
+   little of it into its own glass. The wallpaper is one blue hue, so without
+   this the logos read as stickers dropped onto the scene rather than lit by it. */
+.tile {
+  --rim: 12px;
+  --mag: 1.45;
+  --brand: 100 189 255;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 30px -10px rgb(var(--brand) / 0.3),
+    inset 0 -20px 38px -30px rgb(var(--brand) / 0.5),
+    var(--e2);
+  transition:
+    transform 0.4s var(--ease),
+    box-shadow 0.4s var(--ease);
+}
+
+.tile .mark {
+  position: relative;
+  z-index: 4;
+  width: 44%;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.55));
+  transition: transform 0.4s var(--ease);
+}
+.tile .mark svg,
+.tile .mark img { width: 100%; height: auto; display: block; }
+
+.tile:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 34px -8px rgb(var(--brand) / 0.5),
+    inset 0 -22px 40px -28px rgb(var(--brand) / 0.7),
+    var(--e3),
+    0 0 36px -14px rgb(var(--brand) / 0.45);
+}
+.tile:hover .mark { transform: scale(1.07); }
+.tile:hover .lens { opacity: 1; }
+.tile:hover::after { opacity: 1; animation: sweep 0.9s var(--ease); }
+.tile:active { transform: translateY(-1px) scale(0.965); }
+
+@keyframes sweep {
+  from { transform: translateX(-130%); }
+  to { transform: translateX(130%); }
+}
+
+/* Sits over the planet on the right-hand column, so it needs a shadow to hold
+   its own against the bright glyphs rather than relying on opacity alone. */
+.cell .label {
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(232, 236, 245, 0.5);
+  text-shadow: 0 1px 6px rgba(5, 5, 9, 0.95), 0 0 14px rgba(5, 5, 9, 0.8);
+  transition: color 0.3s var(--ease);
+  white-space: nowrap;
+}
+.cell:hover .label { color: rgba(178, 220, 255, 0.95); }
+
+/* Keyboard hint badge — visible while ⌥ is held. */
+.tile .key {
+  position: absolute;
+  z-index: 4;
+  top: 7px;
+  left: 9px;
+  font-family: var(--mono);
+  font-size: var(--fs-badge);
+  color: rgba(100, 189, 255, 0.85);
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+body.hint .tile .key { opacity: 1; }
+
+/* Same glass as its neighbours, just quieter — a dashed wireframe in a row of
+   finished tiles reads as an unfinished mockup. */
+.tile.add {
+  color: rgba(232, 236, 245, 0.4);
+  cursor: pointer;
+  border: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 26px -12px rgba(100, 189, 255, 0.22),
+    var(--e1);
+}
+.tile.add::before { opacity: 0.4; }
+.tile.add:hover {
+  color: var(--cyan);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 30px -8px rgba(100, 189, 255, 0.4),
+    var(--e2);
+}
+.tile.add:hover::before { opacity: 1; }
+.tile.add .mark { width: 28%; }
+
+/* ── Edit mode ──────────────────────────────────────────────── */
+
+.remove {
+  position: absolute;
+  z-index: 5;
+  top: -5px;
+  right: -5px;
+  width: 20px;
+  height: 20px;
+  display: none;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(20, 20, 28, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+  color: var(--ink-dim);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.remove:hover { color: #ff6b6b; background: rgba(40, 14, 14, 0.92); }
+body.editing .remove { display: grid; }
+body.editing .cell { cursor: grab; }
+body.editing .tile { animation: nudge 2.6s ease-in-out infinite; }
+body.editing .cell:nth-child(even) .tile { animation-delay: -1.3s; }
+.cell.dragging { opacity: 0.35; }
+
+@keyframes nudge {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2px) rotate(-0.35deg); }
+}
+
+/* ── Quick create ───────────────────────────────────────────── */
+
+.quick {
+  --rim: 10px;
+  --mag: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 7px;
+  border-radius: var(--r-panel);
+}
+.quick[hidden] { display: none; }
+
+/* One "NEW" marker for the whole strip. Every item used to carry its own brand
+   logo, which repeated all five marks from the grid directly above at half size
+   — the single noisiest thing in the layout. Type alone is unambiguous here. */
+.quick .lead {
+  position: relative;
+  z-index: 4;
+  flex: none;
+  padding: 0 var(--s3) 0 var(--s2);
+  font-family: var(--mono);
+  font-size: var(--fs-badge);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(100, 189, 255, 0.75);
+}
+
+.quick .item {
+  position: relative;
+  z-index: 4;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px var(--s1);
+  border-radius: var(--r-inner);
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-dim);
+  transition: background 0.28s var(--ease), color 0.28s var(--ease);
+}
+.quick .item .txt { overflow: hidden; text-overflow: clip; }
+.quick .item:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+/* ── Search ─────────────────────────────────────────────────── */
+
+.searchwrap { position: relative; z-index: 5; }
+.searchwrap[hidden] { display: none; }
+
+.search {
+  --rim: 11px;
+  --mag: 1.35;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: 0 var(--s5);
+  height: 54px;
+  border-radius: var(--r-panel);
+}
+.search[hidden] { display: none; }
+.search .glyph {
+  position: relative;
+  z-index: 4;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: rgba(100, 189, 255, 0.75);
+  transition: color 0.3s var(--ease);
+}
+.search:focus-within .glyph { color: var(--cyan); }
+.search input {
+  position: relative;
+  z-index: 4;
+  flex: 1;
+  border: 0;
+  background: none;
+  outline: none;
+  font-family: var(--sans);
+  font-size: var(--fs-input);
+  color: var(--ink);
+  user-select: text;
+}
+.search input::placeholder { color: var(--ink-faint); }
+.search .scope {
+  position: relative;
+  z-index: 4;
+  font-family: var(--mono);
+  font-size: var(--fs-badge);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(100, 189, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: var(--r-chip);
+  background: rgba(100, 189, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(100, 189, 255, 0.25);
+}
+.search .scope[hidden] { display: none; }
+
+/* ── Suggestion dropdown ────────────────────────────────────── */
+
+/* Floats over the grid rather than pushing it down — no layout shift as you
+   type. Deliberately no .lens: it sits on top of glass tiles, and stacking two
+   refracted surfaces just turns to mud. */
+.suggest {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 0;
+  right: 0;
+  z-index: 6;
+  padding: 7px;
+  border-radius: var(--r-panel);
+  overflow: hidden;
+  background: linear-gradient(160deg,
+    rgba(22, 24, 34, 0.86) 0%,
+    rgba(14, 15, 22, 0.9) 100%);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 26px 60px -24px rgba(0, 0, 0, 0.95);
+  animation: suggest-in 0.18s var(--ease);
+}
+.suggest[hidden] { display: none; }
+
+@keyframes suggest-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.srow {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  padding: 9px var(--s3);
+  border: 0;
+  border-radius: var(--r-inner);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-body);
+  line-height: 1.2;
+  transition: background 0.15s var(--ease);
+}
+
+.srow .ricon {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  color: rgba(100, 189, 255, 0.65);
+}
+.srow .ricon svg,
+.srow .ricon img { width: 100%; height: auto; display: block; }
+
+.srow .rtext {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The part you already typed stays quiet so the completion is what reads. */
+.srow .rtext .typed { color: var(--ink-dim); }
+
+.srow .rhint {
+  flex: none;
+  font-family: var(--mono);
+  font-size: var(--fs-badge);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(100, 189, 255, 0.85);
+  padding: 3px 7px;
+  border-radius: var(--r-chip);
+  background: rgba(100, 189, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(100, 189, 255, 0.22);
+}
+
+.srow:hover { background: rgba(255, 255, 255, 0.06); }
+.srow.on {
+  background: rgba(100, 189, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(100, 189, 255, 0.3);
+}
+.srow.on .ricon { color: var(--cyan); }
+
+/* ── Footer ─────────────────────────────────────────────────── */
+
+/* Was two bare words floating in the void. Aligning them to the column's right
+   edge and giving them a hairline gives them somewhere to belong. */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s1);
+  margin-top: calc(var(--s2) * -1);
+  font-family: var(--mono);
+  font-size: var(--fs-badge);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.foot button {
+  border: 0;
+  border-radius: var(--r-chip);
+  padding: 5px 10px;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: rgba(232, 236, 245, 0.28);
+  cursor: pointer;
+  transition: color 0.25s var(--ease), background 0.25s var(--ease),
+    box-shadow 0.25s var(--ease);
+}
+.foot button:hover {
+  color: var(--cyan);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+body.editing .foot .edit {
+  color: var(--cyan);
+  background: rgba(100, 189, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(100, 189, 255, 0.3);
+}
+
+/* ── Add-link form ──────────────────────────────────────────── */
+
+.addform {
+  --rim: 11px;
+  --mag: 1.3;
+  display: none;
+  gap: var(--s2);
+  padding: 7px;
+  border-radius: var(--r-panel);
+}
+.addform.open { display: flex; }
+.addform input {
+  position: relative;
+  z-index: 4;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  border-radius: var(--r-inner);
+  padding: 11px 14px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  outline: none;
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  color: var(--ink);
+  user-select: text;
+}
+.addform input:focus { box-shadow: inset 0 0 0 1px rgba(100, 189, 255, 0.55); }
+.addform input::placeholder { color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+.addform input.name { flex: 0 0 116px; }
+.addform button {
+  position: relative;
+  z-index: 4;
+  border: 0;
+  border-radius: var(--r-inner);
+  padding: 0 18px;
+  background: rgba(100, 189, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(100, 189, 255, 0.4);
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.25s var(--ease);
+}
+.addform button:hover { background: rgba(100, 189, 255, 0.32); }
+
+/* ── Narrow windows: centre the column, scrim top-down ──────── */
+
+/* The items are type-only now, so hiding the text would leave them empty —
+   tighten the letterforms instead of removing them. */
+@media (max-width: 1180px) {
+  .quick .item { letter-spacing: 0.02em; padding-inline: 0; }
+  .quick .lead { padding-inline: var(--s1) var(--s2); }
+}
+
+@media (max-width: 880px) {
+  .column {
+    left: 50%;
+    width: min(460px, 88vw);
+    transform: translate(-50%, -50%);
+  }
+  body::before {
+    background:
+      linear-gradient(180deg, rgba(5, 5, 9, 0.55), rgba(5, 5, 9, 0.78) 45%, rgba(5, 5, 9, 0.6)),
+      radial-gradient(90% 60% at 50% 50%, rgba(82, 125, 255, 0.12), transparent 65%);
+  }
+}
+
+/* ── Entrance ───────────────────────────────────────────────── */
+
+/* The blocks resolve in sequence rather than all snapping in at once, which is
+   most of the difference between "a page loaded" and "a thing was designed". */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.column > * {
+  animation: rise 0.5s var(--ease) backwards;
+}
+.column > header { animation-delay: 0.02s; }
+.column > .searchwrap { animation-delay: 0.08s; }
+.column > .grid { animation-delay: 0.13s; }
+.column > .quick { animation-delay: 0.19s; }
+.column > .foot { animation-delay: 0.24s; }
+
+.grid .cell {
+  animation: rise 0.45s var(--ease) backwards;
+  animation-delay: calc(0.13s + var(--i, 0) * 0.028s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition-duration: 0.01ms !important; }
+}

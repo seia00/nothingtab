@@ -1,0 +1,10 @@
+.vercel
+node_modules/
+dist/
+.DS_Store
+
+# Kept on disk, never published: this app's local settings, and downloaded
+# wallpaper art that isn't ours to redistribute.
+.claude/
+wallhaven-*.png
+.legacy-glass/assets/wallpaper*.webp

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>New Tab</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preload" as="image" href="assets/wallpaper.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/wallpaper-lens.webp" type="image/webp">
+  <!-- app.js imports icons.js, so without this the two download one after the
+       other instead of together. -->
+  <link rel="modulepreload" href="app.js">
+  <link rel="modulepreload" href="icons.js">
+</head>
+<body>
+
+  <main class="column">
+
+    <header>
+      <div class="clock" id="clock">--:--</div>
+      <div class="meta">
+        <span id="date"></span>
+        <span class="sep">·</span>
+        <button class="weather" id="weather" type="button" hidden
+                title="Click to change city"></button>
+        <input class="weather-input" id="city" type="text" hidden
+               placeholder="City" aria-label="City for weather">
+      </div>
+    </header>
+
+    <!-- The panel clips its own children, so the dropdown has to live outside
+         it and be positioned against this wrapper. -->
+    <div class="searchwrap" id="searchwrap" hidden>
+      <div class="search glass" id="search">
+        <span class="lens"></span>
+        <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+             stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="10.5" cy="10.5" r="6.4"/><path d="M15.2 15.2 20.5 20.5"/>
+        </svg>
+        <input id="q" type="text" placeholder="Search or jump to a tile"
+               autocomplete="off" spellcheck="false" aria-label="Search"
+               role="combobox" aria-expanded="false" aria-controls="suggest"
+               aria-autocomplete="list">
+        <span class="scope" id="scope" hidden></span>
+      </div>
+      <div class="suggest" id="suggest" role="listbox" aria-label="Suggestions" hidden></div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="quick glass" id="quick">
+      <span class="lens"></span>
+    </div>
+
+    <div class="addform glass" id="addform">
+      <span class="lens"></span>
+      <input class="url" id="addurl" type="text" placeholder="URL"
+             autocomplete="off" spellcheck="false" aria-label="Link URL">
+      <input class="name" id="addname" type="text" placeholder="Name"
+             autocomplete="off" spellcheck="false" aria-label="Link name">
+      <button id="addgo" type="button">Add</button>
+    </div>
+
+    <footer class="foot">
+      <button class="edit" id="edit" type="button">Edit</button>
+      <button id="reset" type="button">Reset</button>
+    </footer>
+
+  </main>
+
+  <script type="module" src="app.js"></script>
+  <script>
+    // Registered after load so it never competes with the first render.
+    if ("serviceWorker" in navigator) {
+      addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
+    }
+  </script>
+</body>
+</html>
